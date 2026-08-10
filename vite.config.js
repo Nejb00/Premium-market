@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   // Vercel sert à la racine '/' — plus de sous-chemin GitHub Pages.
-  base: '/',
+  base: '/Premium-market/',
   build: {
     rollupOptions: {
       input: {
