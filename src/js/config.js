@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const SUPABASE_URL = 'https://peojyqliwrtghomyukwn.supabase.co';
-export const SUPABASE_ANON_KEY = 'sb_publishable_Fy-Q_BAginf2p6UdUtxDMA_V1hP8Slt';
+export const SUPABASE_URL = 'https://ueapohbmronolhvrlrkk.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable__P9A_xW1IZrKs3MbwCwpPw_0iR_S3OI';
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export const BASE_URL = 'https://nejb00.github.io/Premium-market/';
