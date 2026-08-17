@@ -37,10 +37,15 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Premium-market/assets/main-Dvc8Opf_.js"></script>
-  <link rel="modulepreload" crossorigin href="/Premium-market/assets/api-DZYMt3pV.js">
-  <link rel="stylesheet" crossorigin href="/Premium-market/assets/main-DHqwaXE1.css">
+    <!-- Fonts : réduire le nombre de graisses chargées pour alléger le payload -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Performance : preconnect / dns-prefetch pour wsrv.nl (service d'images) -->
+    <link rel="dns-prefetch" href="//wsrv.nl">
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+  <script type="module" crossorigin src="/Premium-market/assets/main-D_SFnSeS.js"></script>
+  <link rel="modulepreload" crossorigin href="/Premium-market/assets/api-Cn-VBkN_.js">
+  <link rel="stylesheet" crossorigin href="/Premium-market/assets/main-CcGAuBfU.css">
 </head>
 <body>
     <div id="catalogueWrapper">
@@ -54,6 +59,7 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Changer de thème" title="Basculer thème clair/sombre">🌙</button>
                     <button class="logout-btn" id="logoutBtn" aria-label="Se déconnecter" title="Se déconnecter" style="display:none;">🚪</button>
                 </div>
             </header>
@@ -321,6 +327,11 @@
         </div>
 
         <div class="filters-overlay" id="filtersOverlay"></div>
+    </div>
+
+    <!-- ✅ Vue compte « Mon NRJ » -->
+    <div id="accountView">
+        <div id="accountContent"></div>
     </div>
 
 </body>
