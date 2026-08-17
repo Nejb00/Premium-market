@@ -1,4 +1,5 @@
 import { NEW_PRODUCT_DAYS, POPULAR_THRESHOLD, MAX_SEARCH_RESULTS } from './config.js';
+import { state } from './state.js';
 
 export function debounce(func, wait) {
     let timeout;
@@ -21,10 +22,30 @@ export function isNewProduct(p) {
     return (Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60 * 24) <= NEW_PRODUCT_DAYS;
 }
 
+// ✅ Badge NOUVEAU rare : moins de 7 jours ET parmi les 30 plus récents
+const MAX_FRESH_BADGES = 30;
+let _freshCache = null;
+let _freshRef = null;
+export function isFresh(p) {
+    if (!p || !p.created_at) return false;
+    if (_freshRef !== state.products) {
+        _freshRef = state.products;
+        const cutoff = Date.now() - NEW_PRODUCT_DAYS * 86400000;
+        _freshCache = new Set(
+            [...state.products]
+                .filter(x => x.created_at && new Date(x.created_at).getTime() >= cutoff)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, MAX_FRESH_BADGES)
+                .map(x => x.id)
+        );
+    }
+    return _freshCache.has(p.id);
+}
+
 export function isBestSeller(p) { return (Number(p.popularity_score) || 0) >= POPULAR_THRESHOLD; }
 
 export function generateBadgesHTML(p, isModal = false) {
-    const isNew = isNewProduct(p);
+    const isNew = isFresh(p);
     const isBest = isBestSeller(p);
     if (!isModal) {
         if (isBest) return '<div class="badge-container"><span class="badge badge-best-seller">🔥 Populaire</span></div>';
@@ -38,12 +59,13 @@ export function generateBadgesHTML(p, isModal = false) {
     return (isNew || isBest) ? html : '';
 }
 
+// ✅ Toast discret : 1.2 s au lieu de 2 s
 export function showToast(m) {
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = m;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+    setTimeout(() => t.classList.remove('show'), 1200);
 }
 
 export function getCategoryIcon(category) {
@@ -139,7 +161,7 @@ export function calculateSearchScore(query, product) {
     }
 
     if (isBestSeller(product)) score += 15;
-    if (isNewProduct(product)) score += 10;
+    if (isFresh(product)) score += 10;
 
     return score;
 }
@@ -162,3 +184,37 @@ export function highlightMatch(text, query) {
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     return escapedText.replace(regex, '<span class="highlight">$1</span>');
 }
+
+// ─── Optimisation images : vignettes légères pour économiser les forfaits ───
+export function thumb(url, w = 300, h = 400) {
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) return url;
+  const params = new URLSearchParams({ url, w: String(w), h: String(h), fit: 'cover', output: 'webp', q: '80' });
+  return `https://wsrv.nl/?${params.toString()}`;
+}
+
+export function thumbImg(url, alt = '', w = 300, h = 400, cls = '') {
+  if (!url) return '';
+  const onerr = `this.onerror=function(){this.style.display='none'};if(this.dataset.full){this.src=this.dataset.full;this.removeAttribute('data-full');this.removeAttribute('data-ts');}`;
+  const clsAttr = cls ? ` class="${escapeHtml(cls)}"` : '';
+  return `<img${clsAttr} src="${escapeHtml(thumb(url, w, h))}" data-full="${escapeHtml(url)}" data-ts="${Date.now()}" alt="${escapeHtml(alt)}" loading="lazy" referrerpolicy="no-referrer" decoding="async" onload="this.classList.add('loaded')" onerror="${onerr}" width="${w}" height="${h}">`;
+}
+
+// ✅ WATCHDOG : une image qui rame plus de 6 s bascule sur l'URL d'origine
+let _watchdogStarted = false;
+function startImgWatchdog() {
+  if (_watchdogStarted) return;
+  _watchdogStarted = true;
+  setInterval(() => {
+    const now = Date.now();
+    document.querySelectorAll('img[data-full][data-ts]:not(.loaded)').forEach((img) => {
+      if (now - Number(img.dataset.ts) > 6000) {
+        const full = img.dataset.full;
+        img.removeAttribute('data-ts');
+        img.removeAttribute('data-full');
+        img.src = full;
+      }
+    });
+  }, 2000);
+}
+startImgWatchdog();
