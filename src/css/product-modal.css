@@ -21,7 +21,7 @@
 
 .product-actions-overlay { position: absolute; bottom: 44px; right: 12px; z-index: 10; display: flex; flex-direction: column; gap: 0.5rem; }
 .action-circle { width: 38px; height: 38px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.16); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
-.action-circle:hover { background: rgba(0,0,0,0.75); }
+.action-circle:hover { background: rgba(0,0,0,0.75); border-color: var(--primary); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18); }
 
 .carousel-dots { display: flex; justify-content: center; gap: 6px; position: absolute; bottom: 12px; left: 0; right: 0; }
 .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); border: none; cursor: pointer; }
@@ -47,7 +47,8 @@
 .sourcing-section { padding: 2rem 1.5rem 3rem; background: var(--surface); border-top: 1px solid var(--border); text-align: center; }
 .sourcing-section h3 { font-size: 1.1rem; margin-bottom: 0.8rem; color: var(--text); }
 .sourcing-section p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.5; }
-.sourcing-btn { background: var(--primary); color: white; border: none; padding: 0.9rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; margin-right: 0.5rem; }
+.sourcing-btn { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; padding: 0.9rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; margin-right: 0.5rem; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3); transition: var(--transition); }
+.sourcing-btn:hover { filter: brightness(1.1); box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4); }
 .whatsapp-btn { background: var(--whatsapp); color: white; border: none; padding: 0.9rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
 
 .recommendations { padding: 1rem 0; background: var(--bg); border-top: 1px solid var(--border); margin-bottom: var(--bottom-bar-height); }
