@@ -4,7 +4,7 @@ export const SUPABASE_URL = 'https://ueapohbmronolhvrlrkk.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable__P9A_xW1IZrKs3MbwCwpPw_0iR_S3OI';
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export const BASE_URL = 'https://nejb00.github.io/Premium-market/';
+export const BASE_URL = '/';
 export const WHATSAPP_NUMBER = '242066271882';
 export const PRODUCTS_PER_PAGE = 20;
 export const NEW_PRODUCT_DAYS = 7;
