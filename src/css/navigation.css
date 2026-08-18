@@ -68,11 +68,11 @@
   width: 36px;
   height: 24px;
   border-radius: 999px;
-  background: radial-gradient(closest-side, rgba(255, 140, 66, 0.3), transparent 72%);
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.3), transparent 72%);
 }
 
 .main-nav .nav-item.active { color: var(--primary); }
-.main-nav .nav-item.active svg { transform: translateY(-1px) scale(1.08); filter: drop-shadow(0 0 8px rgba(255, 140, 66, 0.5)); }
+.main-nav .nav-item.active svg { transform: translateY(-1px) scale(1.08); filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5)); }
 
 /* ✅ Anciens globes colorés neutralisés (les classes restent au HTML, sans effet) */
 .main-nav .categories-accent,
@@ -162,7 +162,7 @@ body { padding-bottom: calc(var(--nav-height) + 18px); }
   font-weight: 800;
   font-size: 1.3rem;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
   flex-shrink: 0;
 }
 

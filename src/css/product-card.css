@@ -8,7 +8,7 @@
  overflow: hidden;
  aspect-ratio: 3 / 4;
  cursor: pointer;
- background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+ background: linear-gradient(90deg, #121216 25%, #1c1c22 50%, #121216 75%);
  background-size: 200% 100%;
  animation: skeleton-loading 1.5s infinite;
  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -17,11 +17,11 @@
  transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease;
 }
 
-.product-card.visible { opacity: 1; transform: translateY(0); animation: none; background: var(--surface-light); }
+.product-card.visible { opacity: 1; transform: translateY(0); animation: none; background: var(--surface-light); border: 1px solid var(--border); }
 
 @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.product-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.product-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--primary-glow), 0 0 24px var(--primary-glow); transform: translateY(-3px); }
 .product-card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity 0.3s ease; z-index: 1; }
 .product-card img.loaded { opacity: 1; }
 
@@ -39,9 +39,9 @@
 .product-card-detail-item { display: inline-flex; align-items: center; gap: 0.2rem; }
 
 .skeleton-card { border-radius: var(--radius); overflow: hidden; aspect-ratio: 3 / 4; background: var(--surface-light); border: 1px solid var(--border); }
-.skeleton-image { height: 70%; background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+.skeleton-image { height: 70%; background: linear-gradient(90deg, #121216 25%, #1c1c22 50%, #121216 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
 .skeleton-text { padding: 0.7rem; }
-.skeleton-line { height: 10px; border-radius: 5px; background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; margin-bottom: 0.45rem; }
+.skeleton-line { height: 10px; border-radius: 5px; background: linear-gradient(90deg, #121216 25%, #1c1c22 50%, #121216 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; margin-bottom: 0.45rem; }
 .skeleton-line--title { width: 85%; }
 .skeleton-line--price { width: 45%; }
 
@@ -70,7 +70,7 @@
  position: absolute;
  top: 46px;
  right: 10px;
- background: rgba(255, 140, 66, 0.9);
+ background: rgba(16, 185, 129, 0.9);
  border-radius: 50%;
  width: 30px;
  height: 30px;
