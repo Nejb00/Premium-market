@@ -36,11 +36,16 @@
 .main-nav .nav-item:active { transform: scale(0.92); }
 
 .main-nav .nav-item svg {
-  fill: currentColor;
   width: 21px;
   height: 21px;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform 0.25s ease, filter 0.25s ease, fill 0.2s ease, stroke 0.2s ease;
   z-index: 1;
+}
+/* Icônes stroke fin (Lucide) : outline par défaut, fill émeraude quand active */
+.main-nav .nav-item .nav-icon { fill: none; }
+.main-nav .nav-item.active .nav-icon {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 /* ✅ Titres des boutons, générés en pur CSS (aucun HTML à toucher) */
