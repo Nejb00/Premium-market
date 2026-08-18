@@ -39,10 +39,10 @@ function applyTheme(theme) {
 
   if (theme === 'light') {
     html.classList.add('light-theme');
-    if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
+    if (themeToggleBtn) themeToggleBtn.classList.add('is-light');
   } else {
     html.classList.remove('light-theme');
-    if (themeToggleBtn) themeToggleBtn.textContent = '🌙';
+    if (themeToggleBtn) themeToggleBtn.classList.remove('is-light');
   }
 }
 

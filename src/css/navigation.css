@@ -36,11 +36,16 @@
 .main-nav .nav-item:active { transform: scale(0.92); }
 
 .main-nav .nav-item svg {
-  fill: currentColor;
   width: 21px;
   height: 21px;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform 0.25s ease, filter 0.25s ease, fill 0.2s ease, stroke 0.2s ease;
   z-index: 1;
+}
+/* Icônes stroke fin (Lucide) : outline par défaut, fill émeraude quand active */
+.main-nav .nav-item .nav-icon { fill: none; }
+.main-nav .nav-item.active .nav-icon {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 /* ✅ Titres des boutons, générés en pur CSS (aucun HTML à toucher) */
@@ -56,23 +61,24 @@
 .main-nav .nav-item[data-nav="categories"]::after { content: 'Catégories'; }
 .main-nav .nav-item[data-nav="cart"]::after { content: 'Panier'; }
 .main-nav .nav-item[data-nav="favorites"]::after { content: 'Favoris'; }
-.main-nav .nav-item[data-nav="profile"]::after { content: 'Mon NRJ'; }
+.main-nav .nav-item[data-nav="profile"]::after { content: 'Premium'; }
 
 /* ✅ Halo « liquide » derrière l'icône active */
 .main-nav .nav-item.active::before {
   content: '';
   position: absolute;
-  top: 5px;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 36px;
-  height: 24px;
+  width: 42px;
+  height: 30px;
   border-radius: 999px;
-  background: radial-gradient(closest-side, rgba(255, 140, 66, 0.3), transparent 72%);
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.35), transparent 72%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .main-nav .nav-item.active { color: var(--primary); }
-.main-nav .nav-item.active svg { transform: translateY(-1px) scale(1.08); filter: drop-shadow(0 0 8px rgba(255, 140, 66, 0.5)); }
+.main-nav .nav-item.active svg { transform: translateY(-1px) scale(1.1); filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6)); }
 
 /* ✅ Anciens globes colorés neutralisés (les classes restent au HTML, sans effet) */
 .main-nav .categories-accent,
@@ -95,7 +101,8 @@
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 1.5px solid rgba(16, 16, 20, 0.9);
+  border: 1.5px solid rgba(8, 8, 10, 0.95);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
   z-index: 2;
 }
 .favorites-badge { background: var(--favorites); color: #fff; }
@@ -162,7 +169,7 @@ body { padding-bottom: calc(var(--nav-height) + 18px); }
   font-weight: 800;
   font-size: 1.3rem;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
   flex-shrink: 0;
 }
 

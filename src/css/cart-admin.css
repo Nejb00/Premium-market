@@ -185,9 +185,9 @@
 
 /* ── Panier volant : pulse du badge à l'arrivée ────────────────────────── */
 @keyframes badge-pop {
- 0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255, 140, 66, 0.6); }
- 40%  { transform: scale(1.35); box-shadow: 0 0 0 10px rgba(255, 140, 66, 0); }
- 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255, 140, 66, 0); }
+ 0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+ 40%  { transform: scale(1.35); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+ 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .cart-badge.badge-pulse,

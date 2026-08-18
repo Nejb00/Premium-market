@@ -1,14 +1,14 @@
 {
-  "name": "NRJ Marketplace International",
-  "short_name": "NRJ Market",
+  "name": "Premium Market",
+  "short_name": "Premium",
   "description": "Grossiste en ligne — import direct de Chine, France et Turquie vers le Congo Brazzaville. Commande via WhatsApp.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#0f0f0f",
-  "background_color": "#0f0f0f",
+  "theme_color": "#08080a",
+  "background_color": "#08080a",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
