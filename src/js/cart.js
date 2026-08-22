@@ -1,16 +1,17 @@
-import { state, saveCart, saveFavorites } from './state.js';
+import { state, saveCart, saveFavorites, saveOrders } from './state.js';
 import { escapeHtml, formatPrice, showToast, thumbImg } from './utils.js';
 import { trackPopularity } from './api.js';
 import { WHATSAPP_NUMBER, BASE_URL } from './config.js';
 import { refreshCatalogue } from './catalogue.js';
+import { signalFavorite, signalCart, signalOrder } from './reco.js';
+import { syncAllOfflineData } from './sync.js';
 
-const ORDERS_KEY = 'nrj_orders';
-export function loadOrders() {
-  try { state.orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }
-  catch { state.orders = []; }
+function syncSoon() {
+    if (navigator.onLine) syncAllOfflineData().catch(() => {});
 }
-function saveOrders() {
-  try { localStorage.setItem(ORDERS_KEY, JSON.stringify(state.orders)); } catch {}
+
+export function loadOrders() {
+    if (!Array.isArray(state.orders)) state.orders = [];
 }
 
 function flyToCart(sourceEl) {
@@ -31,13 +32,16 @@ function flyToCart(sourceEl) {
         background: var(--primary);
         border-radius: 50%;
         z-index: 9999;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         pointer-events: none;
         opacity: 1;
         box-shadow: 0 4px 16px rgba(255, 140, 66, 0.5);
         transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s ease;
     `;
-    ghost.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22"><path fill="white" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>`;
+    ghost.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22"><path fill="white" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.9
+9 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>`;
     document.body.appendChild(ghost);
 
     const dx = (tgtRect.left + tgtRect.width / 2 - 22) - parseFloat(ghost.style.left);
@@ -60,30 +64,34 @@ export async function addToCart(pid, t = '', c = '', sourceEl = null) {
     const p = state.products.find(pr => pr.id === pid);
     if (!p) return;
     if (sourceEl) flyToCart(sourceEl);
+    signalCart(p);
 
     const moq = Number(p.moq) || 1;
     const exist = state.cart.find(i => i.productId === pid && i.taille === t && i.couleur === c);
     if (exist) exist.quantity = Number(exist.quantity) + moq;
     else state.cart.push({ productId: pid, quantity: moq, taille: t, couleur: c, moq });
     trackPopularity(pid, 5);
-    saveCart();
+    await saveCart();
     refreshCartDisplay();
+    syncSoon();
     showToast('🛒 Ajouté au panier');
 }
 
-export function changeQty(idx, d) {
+export async function changeQty(idx, d) {
     const it = state.cart[idx];
     if (!it) return;
     const moq = Number(it.moq) || 1;
     it.quantity = Math.max(moq, Number(it.quantity) + d);
-    saveCart();
+    await saveCart();
     refreshCartDisplay();
+    syncSoon();
 }
 
-export function removeCartItem(idx) {
+export async function removeCartItem(idx) {
     state.cart.splice(idx, 1);
-    saveCart();
+    await saveCart();
     refreshCartDisplay();
+    syncSoon();
 }
 
 export function updateNavCartBadge() {
@@ -94,21 +102,32 @@ export function updateNavCartBadge() {
 
 export function updateNavFavBadge() {
     const cnt = state.favorites.length;
-    const b = document.getElementById('navFavBadge');
+    const b =
+ document.getElementById('navFavBadge');
     if (b) { b.textContent = cnt > 99 ? '99+' : cnt; b.style.display = cnt > 0 ? 'flex' : 'none'; }
 }
 
 export function refreshCartDisplay() {
-    const tot = state.cart.reduce((s, i) => { const p = state.products.find(pr => pr.id === i.productId); return s + (p ? p.price * Number(i.quantity) : 0); }, 0);
-    document.getElementById('cartTotal').textContent = formatPrice(tot);
-    document.getElementById('checkoutBtn').disabled = state.cart.length === 0;
+    const tot = state.cart.reduce((s, i) => {
+        const p = state.products.find(pr => pr.id === i.productId);
+        return s + (p ? p.price * Number(i.quantity) : 0);
+    }, 0);
+    const totalEl = document.getElementById('cartTotal');
+    if (totalEl) totalEl.textContent = formatPrice(tot);
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) checkoutBtn.disabled = state.cart.length === 0;
     const ctr = document.getElementById('cartItems');
-    if (!state.cart.length) { ctr.innerHTML = '<div class="cart-empty">Panier vide</div>'; updateNavCartBadge(); return; }
+    if (!ctr) { updateNavCartBadge(); return; }
+    if (!state.cart.length) {
+        ctr.innerHTML = '<div class="cart-empty">Panier vide</div>';
+        updateNavCartBadge();
+        return;
+    }
     ctr.innerHTML = state.cart.map((it, idx) => {
         const p = state.products.find(pr => pr.id === it.productId);
         if (!p) return '';
         const img = p.image ? thumbImg(p.image, p.name, 100, 100) : '📦';
-        let vars = [];
+        const vars = [];
         if (it.couleur) vars.push(`Couleur: ${it.couleur}`);
         if (it.taille) vars.push(`Taille: ${it.taille}`);
         const dis = Number(it.quantity) <= (Number(it.moq) || 1);
@@ -117,7 +136,8 @@ export function refreshCartDisplay() {
     updateNavCartBadge();
 }
 
-export function openOrderModal() {
+export f
+unction openOrderModal() {
     if (!state.cart.length) return;
     let tot = 0;
     const items = state.cart.map(i => {
@@ -133,11 +153,12 @@ export function openOrderModal() {
     document.getElementById('cartOverlay').classList.remove('open');
 }
 
-export function sendWhatsAppOrder() {
+export async function sendWhatsAppOrder() {
     const name = document.getElementById('customerName').value.trim();
     if (!name) return alert('Entre ton nom');
     localStorage.setItem('nrj_customer_name', name);
-    let msg = `Bonjour NRJ Marketplace International, je suis ${name}. Ma commande :\n`, tot = 0;
+    let msg = `Bonjour NRJ Marketplace International, je suis ${name}. Ma commande :\n`;
+    let tot = 0;
 
     const snapshotItems = state.cart.map(i => {
         const p = state.products.find(pr => pr.id === i.productId);
@@ -146,12 +167,18 @@ export function sendWhatsAppOrder() {
         return { productId: p.id, name: p.name, price: p.price, qty: Number(i.quantity), variant: variant || null };
     }).filter(Boolean);
 
+    snapshotItems.forEach(i => {
+        const p = state.products.find(pr => pr.id === i.productId);
+        if (p) signalOrder(p);
+    });
+
     state.cart.forEach(i => {
         const p = state.products.find(pr => pr.id === i.productId);
         if (p) {
             let d = `${p.name} [ID: ${p.id}]`;
             if (i.couleur || i.taille) d += ` (${[i.couleur, i.taille].filter(Boolean).join(', ')})`;
-            msg += `- ${d} x${Number(i.quantity)} = ${formatPrice(p.price * Number(i.quantity))}\n  🔗 ${BASE_URL}?id=${p.id}\n`;
+            msg += `- ${d} x${Number(i.quantity)} = ${formatPrice(p.price * Number(i.quantity))}\n  🔗 ${B
+ASE_URL}?id=${p.id}\n`;
             tot += p.price * Number(i.quantity);
         }
     });
@@ -161,39 +188,47 @@ export function sendWhatsAppOrder() {
     state.orders = state.orders || [];
     state.orders.unshift({ id: Date.now(), date: new Date().toISOString(), recipient: name, total: tot, items: snapshotItems });
     if (state.orders.length > 50) state.orders = state.orders.slice(0, 50);
-    saveOrders();
+    await saveOrders();
 
     state.cart = [];
-    saveCart();
+    await saveCart();
     refreshCartDisplay();
     document.getElementById('orderModalOverlay').classList.remove('open');
     showToast('📤 Commande envoyée');
 
     const accountView = document.getElementById('accountView');
-    if (accountView && accountView.style.display === 'flex') renderAccount();
+    if (accountView && accountView.style.display === 'flex' && typeof window.renderAccount === 'function') {
+        window.renderAccount();
+    }
 }
 
-export function toggleFavorite(pid) {
+export async function toggleFavorite(pid) {
     const idx = state.favorites.indexOf(pid);
     const added = idx === -1;
     if (idx > -1) state.favorites.splice(idx, 1); else state.favorites.push(pid);
-    saveFavorites();
+    if (added) {
+        const p = state.products.find(pr => pr.id === pid);
+        if (p) signalFavorite(p);
+    }
+    await saveFavorites();
     updateNavFavBadge();
     document.querySelectorAll(`.fav-icon[data-id="${pid}"]`).forEach(icon => {
         const svg = icon.querySelector('.fav-icon-svg');
-        if (svg) svg.classList.toggle('faved', state.favorites.includes(pid));
+        if (svg) svg.style.fill = state.favorites.includes(pid) ? 'var(--favorites)' : 'currentColor';
     });
     if (document.getElementById('modalFavBtn') && state.currentProductId === pid) {
         const svg = document.getElementById('modalFavBtn').querySelector('.fav-icon-svg');
-        if (svg) svg.classList.toggle('faved', state.favorites.includes(pid));
+        if (svg) svg.style.fill = state.favorites.includes(pid) ? 'var(--favorites)' : 'currentColor';
     }
     if (state.currentFilter === 'favorites') refreshCatalogue();
     if (added) pulseFavoriteIcons(pid);
+    syncSoon();
 }
 
 function pulseFavoriteIcons(pid) {
     const svgs = [];
-    document.querySelectorAll(`.fav-icon[data-id="${pid}"] .fav-icon-svg`).forEach(s => svgs.push(s));
+    document.
+querySelectorAll(`.fav-icon[data-id="${pid}"] .fav-icon-svg`).forEach(s => svgs.push(s));
     const mb = document.getElementById('modalFavBtn');
     if (mb && state.currentProductId === pid) {
         const s = mb.querySelector('.fav-icon-svg');

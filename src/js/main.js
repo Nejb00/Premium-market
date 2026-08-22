@@ -1,24 +1,22 @@
 import '../css/main.css';
-import { state } from './state.js';
+import { state, trackViewedItem, loadPersistedState, saveCart, saveFavorites, saveOrders } from './state.js';
 import { supabaseClient } from './config.js';
-import { escapeHtml, removeEmojis, formatPrice, showToast } from './utils.js';
+import { escapeHtml, removeEmojis, formatPrice, showToast, thumb } from './utils.js';
 import { fetchProducts } from './api.js';
-import { trackViewedItem } from './state.js';
-import { refreshCatalogue, applyFilter, switchView, renderCategories } from './catalogue.js';
-import { addToCart, changeQty, removeCartItem, refreshCartDisplay, toggleFavorite, updateNavFavBadge, openOrderModal, sendWhatsAppOrder, loadOrders } from './cart.js';
+import { refreshCatalogue, applyFilter, switchView } from './catalogue.js';
+import { addToCart, changeQty, removeCartItem, refreshCartDisplay, toggleFavorite, updateNavFavBadge, updateNavCartBadge, openOrderModal, sendWhatsAppOrder, loadOrders } from './cart.js';
 import { openProductModal, closeProductModal } from './product-modal.js';
 import { openEditModal, updateProduct } from './product-edit.js';
 import { initPlaceholderRotation, initVoiceSearch, showSearchDropdown, hideSearchDropdown } from './search.js';
 import { switchToSearchView, switchFromSearchView } from './search-view.js';
+import { setupAutoSync } from './sync.js';
 
 let searchDebounceTimer = null;
 
-// ✅ SYSTÈME DE THÈME - Initialisation et gestion (sans toast : il gâchait la nav)
 function initThemeToggle() {
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (!themeToggleBtn) return;
 
-  // Récupérer le thème sauvegardé ou utiliser la préférence système
   const savedTheme = localStorage.getItem('nrj_theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -39,10 +37,11 @@ function applyTheme(theme) {
 
   if (theme === 'light') {
     html.classList.add('light-theme');
-    if (themeToggleBtn) themeToggleBtn.classList.add('is-light');
+    if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
   } else {
     html.classList.remove('light-theme');
-    if (themeToggleBtn) themeToggleBtn.classList.remove('is-light');
+    if (themeToggleBtn) themeTo
+ggleBtn.textContent = '🌙';
   }
 }
 
@@ -73,6 +72,22 @@ function initSmartHeader() {
   window.addEventListener('resize', () => { spacer.style.height = wrapper.offsetHeight + 'px'; });
 }
 
+function initServiceWorkerUpdates() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistration().then((registration) => {
+    if (!registration) return;
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showToast("📦 Mise a jour disponible — relance l'app");
+        }
+      });
+    });
+  });
+}
+
 window.addEventListener('scroll', () => {
   const btn = document.getElementById('scrollToTopBtn');
   if (btn) btn.classList.toggle('visible', window.scrollY > 300);
@@ -82,7 +97,8 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('click', function() {
     document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
     this.classList.add('active');
-    state.currentQuickFilter = this.dataset.filter;
+    state.currentQ
+uickFilter = this.dataset.filter;
     refreshCatalogue();
   });
 });
@@ -90,87 +106,90 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 
-searchInput.addEventListener('input', function(e) {
-  const v = e.target.value.trim();
-  clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => showSearchDropdown(v), 300);
-  state.searchQuery = v;
-  refreshCatalogue();
-});
+if (searchInput) {
+  searchInput.addEventListener('input', function(e) {
+    const v = e.target.value.trim();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => showSearchDropdown(v), 300);
+    state.searchQuery = v;
+    refreshCatalogue();
+  });
 
-searchInput.addEventListener('focus', function() { showSearchDropdown(this.value.trim()); });
+  searchInput.addEventListener('focus', function() { showSearchDropdown(this.value.trim()); });
 
-searchInput.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const v = this.value.trim();
-    if (v) { hideSearchDropdown(); switchToSearchView(v); }
-  } else if (e.key === 'Escape') {
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const v = this.value.trim();
+      if (v) { hideSearchDropdown(); switchToSearchView(v); }
+    } else if (e.key === 'Escape') {
+      hideSearchDropdown();
+      this.blur();
+    }
+  });
+}
+
+if (searchClear) {
+  searchClear.addEventListener('click', function() {
+    searchInput.value = '';
+    state.searchQuery = '';
     hideSearchDropdown();
-    this.blur();
-  }
-});
-
-searchClear.addEventListener('click', function() {
-  searchInput.value = '';
-  state.searchQuery = '';
-  hideSearchDropdown();
-  refreshCatalogue();
-  searchInput.focus();
-});
+    refreshCatalogue();
+    searchInput.focus();
+  });
+}
 
 document.addEventListener('click', function(e) {
   const dropdown = document.getElementById('searchDropdown');
   const searchBar = document.querySelector('.search-bar');
-  if (!searchBar.contains(e.target) && !dropdown.contains(e.target)) hideSearchDropdown();
+  if (searchBar && dropdown && !searchBar.contains(e.target) && !dropdown.contains(e.target)) hideSearchDropdown();
 });
 
-// Délégation d'événements globale pour tout le contenu généré dynamiquement
 document.addEventListener('click', e => {
   const fb = e.target.closest('.filter-btn'); if (fb) { applyFilter(fb.dataset.category); return; }
   const addBtn = e.target.closest('[data-action="add-to-cart"]'); if (addBtn) { e.stopPropagation(); addToCart(parseInt(addBtn.dataset.id), '', '', addBtn); return; }
   const favBtn = e.target.closest('[data-action="toggle-favorite"]'); if (favBtn) { e.stopPropagation(); toggleFavorite(parseInt(favBtn.dataset.id)); return; }
-  const editBtn = e.target.closest('[data-action="edit-product"]'); if (editBtn) { e.stopPropagation(); openEditModal(parseInt(editBtn.dataset.id)); return; }
+  const editBtn = e.target.closest('[data-action="edit-product"]'); if (editBtn) { e.stopPropagation(); openEditModal(parseInt(editBtn.dataset.id)); return
+; }
   const removeBtn = e.target.closest('[data-action="cart-remove"]'); if (removeBtn) { e.stopPropagation(); removeCartItem(parseInt(removeBtn.dataset.index)); return; }
   const incBtn = e.target.closest('[data-action="cart-increase"]'); if (incBtn) { changeQty(parseInt(incBtn.dataset.index), 1); return; }
   const decBtn = e.target.closest('[data-action="cart-decrease"]'); if (decBtn) { changeQty(parseInt(decBtn.dataset.index), -1); return; }
   const recCard = e.target.closest('.rec-card'); if (recCard) { openProductModal(parseInt(recCard.dataset.productId)); return; }
   const catCard = e.target.closest('.category-card'); if (catCard) { trackViewedItem(catCard.dataset.category); applyFilter(catCard.dataset.category); switchView('home'); return; }
-  // Actions depuis la vue compte
   const acctAction = e.target.closest('[data-account-action]');
   if (acctAction) { handleAccountAction(acctAction.dataset.accountAction); return; }
   const card = e.target.closest('.product-card');
   if (card && !e.target.closest('.product-card-add') && !e.target.closest('.fav-icon') && !e.target.closest('.product-edit-btn')) openProductModal(parseInt(card.dataset.productId));
 });
 
-document.getElementById('modalCloseBtn').addEventListener('click', () => { if (state.modalOpen) closeProductModal(); });
+document.getElementById('modalCloseBtn')?.addEventListener('click', () => { if (state.modalOpen) closeProductModal(); });
 
 window.addEventListener('popstate', (e) => {
   if (e.state && e.state.search) switchToSearchView(state.searchViewState.query);
   else if (state.modalOpen) closeProductModal();
 });
 
-document.getElementById('modalSourcingBtn').addEventListener('click', () => window.open(`https://wa.me/242066271882?text=${encodeURIComponent("Bonjour NRJ Marketplace, je recherche un produit. Je peux vous envoyer une photo")}`));
-document.getElementById('modalDescSourcingBtn').addEventListener('click', () => window.open(`https://wa.me/242066271882?text=${encodeURIComponent("Bonjour NRJ Marketplace International, je recherche un produit spécifique...")}`));
+document.getElementById('modalSourcingBtn')?.addEventListener('click', () => window.open(`https://wa.me/242066271882?text=${encodeURIComponent('Bonjour NRJ Marketplace, je recherche un produit. Je peux vous envoyer une photo')}`));
+document.getElementById('modalDescSourcingBtn')?.addEventListener('click', () => window.open(`https://wa.me/242066271882?text=${encodeURIComponent('Bonjour NRJ Marketplace International, je recherche un produit specifique...')}`));
 
 document.getElementById('cartCloseBtn')?.addEventListener('click', () => {
+  document.
+getElementById('cartPanel').classList.remove('open');
+  document.getElementById('cartOverlay').classList.remove('open');
+});
+document.getElementById('cartOverlay')?.addEventListener('click', () => {
   document.getElementById('cartPanel').classList.remove('open');
   document.getElementById('cartOverlay').classList.remove('open');
 });
-document.getElementById('cartOverlay').addEventListener('click', () => {
-  document.getElementById('cartPanel').classList.remove('open');
-  document.getElementById('cartOverlay').classList.remove('open');
-});
-document.getElementById('checkoutBtn').addEventListener('click', openOrderModal);
-document.getElementById('sendWhatsAppBtn').addEventListener('click', sendWhatsAppOrder);
-document.getElementById('cancelOrderBtn').addEventListener('click', () => document.getElementById('orderModalOverlay').classList.remove('open'));
+document.getElementById('checkoutBtn')?.addEventListener('click', openOrderModal);
+document.getElementById('sendWhatsAppBtn')?.addEventListener('click', sendWhatsAppOrder);
+document.getElementById('cancelOrderBtn')?.addEventListener('click', () => document.getElementById('orderModalOverlay').classList.remove('open'));
 
-document.getElementById('saveEditBtn').addEventListener('click', updateProduct);
-document.getElementById('cancelEditBtn').addEventListener('click', () => document.getElementById('editProductModalOverlay').classList.remove('open'));
+document.getElementById('saveEditBtn')?.addEventListener('click', updateProduct);
+document.getElementById('cancelEditBtn')?.addEventListener('click', () => document.getElementById('editProductModalOverlay').classList.remove('open'));
 
-document.getElementById('backToHomeBtn').addEventListener('click', () => switchView('home'));
+document.getElementById('backToHomeBtn')?.addEventListener('click', () => switchView('home'));
 
-// ─── Accès admin caché : appui long (500 ms) sur le logo ────────────────────
 function initLogoLongPress() {
   const logo = document.querySelector('.logo-wrapper');
   if (!logo) return;
@@ -185,7 +204,6 @@ function initLogoLongPress() {
   logo.addEventListener('pointermove', () => { moved = true; clearTimeout(pressTimer); });
 }
 
-// ─── Vue compte « Mon NRJ » ──────────────────────────────────────────────────
 export function showAccountView() {
   document.getElementById('catalogueWrapper').style.display = 'none';
   const av = document.getElementById('accountView');
@@ -197,7 +215,8 @@ export function showAccountView() {
 }
 
 export function hideAccountView() {
-  const av = document.getElementById('accountView');
+  const av = do
+cument.getElementById('accountView');
   if (av) av.style.display = 'none';
   document.getElementById('catalogueWrapper').style.display = 'block';
 }
@@ -218,28 +237,29 @@ function renderAccount() {
 
   let ordersHtml = '';
   if (orders.length === 0) {
-    ordersHtml = `<div class="account-empty">Aucune commande envoyée pour l'instant.</div>`;
+    ordersHtml = `<div class="account-empty">Aucune commande envoyee pour l'instant.</div>`;
   } else {
     ordersHtml = orders.slice(0, 10).map(o => {
       const date = new Date(o.date);
       const dateStr = date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
       const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      const itemsPreview = o.items.slice(0, 3).map(it => `${escapeHtml(it.name)} x${it.qty}`).join(' · ');
-      const more = o.items.length > 3 ? ` · +${o.items.length - 3}` : '';
+      const itemsPreview = (o.items || []).slice(0, 3).map(it => `${escapeHtml(it.name)} x${it.qty}`).join(' · ');
+      const more = (o.items || []).length > 3 ? ` · +${o.items.length - 3}` : '';
       return `<div class="account-order">
         <div class="account-order-head">
           <span class="account-order-date">📦 ${dateStr} · ${timeStr}</span>
           <span class="account-order-total">${formatPrice(o.total)}</span>
         </div>
         <div class="account-order-items">${itemsPreview}${more}</div>
-        <div class="account-order-meta">Destinataire WhatsApp : ${escapeHtml(o.recipient)}</div>
+        <div class="account-order-meta">Destinataire WhatsApp : ${escapeHtml(o.recipient || '')}</div>
       </div>`;
     }).join('');
   }
 
   root.innerHTML = `
     <div class="account-header">
-      <button class="account-back" data-account-action="close" aria-label="Retour">←</button>
+      <button class="account-back" data-account-action="close" aria-label="
+Retour">←</button>
       <div class="account-identity">
         <div class="account-avatar">${escapeHtml(initials)}</div>
         <div class="account-greet">
@@ -277,14 +297,14 @@ function renderAccount() {
           <span class="account-menu-meta">${favCount}</span>
         </button>
         <button class="account-menu-item" data-account-action="go-history">
-          <span>🕐 Recherches récentes</span>
+          <span>🕐 Recherches recentes</span>
           <span class="account-menu-meta">→</span>
         </button>
       </div>
     </div>
 
     <div class="account-section">
-      <div class="account-section-title">Mes commandes envoyées</div>
+      <div class="account-section-title">Mes commandes envoyees</div>
       ${ordersHtml}
     </div>
 
@@ -292,11 +312,12 @@ function renderAccount() {
       <div class="account-section-title">Avantages</div>
       <div class="account-menu">
         <button class="account-menu-item" data-account-action="install-app">
-          <span>⚡ Installer l'application</span>
+          
+<span>⚡ Installer l'application</span>
           <span class="account-menu-meta">→</span>
         </button>
         <button class="account-menu-item" data-account-action="go-new">
-          <span>✨ Nouveautés</span>
+          <span>✨ Nouveautes</span>
           <span class="account-menu-meta">→</span>
         </button>
         <button class="account-menu-item" data-account-action="contact">
@@ -307,10 +328,10 @@ function renderAccount() {
     </div>
 
     <div class="account-section">
-      <div class="account-section-title">Données</div>
+      <div class="account-section-title">Donnees</div>
       <div class="account-menu">
         <button class="account-menu-item danger" data-account-action="clear-all">
-          <span>🧹 Effacer toutes mes données</span>
+          <span>🧹 Effacer toutes mes donnees</span>
           <span class="account-menu-meta">→</span>
         </button>
       </div>
@@ -328,7 +349,6 @@ function renderAccount() {
   `;
 }
 
-// ✅ Raccord : permet à cart.js de rafraîchir le compte après une commande
 window.renderAccount = renderAccount;
 
 function handleAccountAction(action) {
@@ -351,7 +371,8 @@ function handleAccountAction(action) {
       hideAccountView();
       state.currentFilter = 'favorites';
       refreshCatalogue();
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.cla
+ssList.remove('active'));
       document.querySelector('.nav-item[data-nav="favorites"]').classList.add('active');
       window.scrollTo(0, 0);
       break;
@@ -376,15 +397,16 @@ function handleAccountAction(action) {
       if (window.deferredInstallPrompt) {
         window.deferredInstallPrompt.prompt();
       } else {
-        alert("Pour installer l'app NRJ :\n\n• Chrome Android : menu ⋮ → « Installer l'application »\n• iOS Safari : bouton Partager → « Sur l'écran d'accueil »");
+        alert("Pour installer l'app NRJ :\n\n• Chrome Android : menu ⋮ → « Installer l'application »\n• iOS Safari : bouton Partager → « Sur l'ecran d'accueil »");
       }
       break;
     }
     case 'clear-all': {
-      if (!confirm('Effacer vos favoris, votre panier, votre historique de recherches et de commandes ? Cette action est définitive.')) return;
+      if (!confirm('Effacer vos favoris, votre panier, votre historique de recherches et de commandes ? Cette action est definitive.')) return;
       try {
         localStorage.removeItem('nrj_favorites');
         localStorage.removeItem('nrj_cart');
+        localStorage.removeItem('nrj_cart_v32');
         localStorage.removeItem('nrj_search_history');
         localStorage.removeItem('nrj_orders');
         localStorage.removeItem('nrj_customer_name');
@@ -392,11 +414,14 @@ function handleAccountAction(action) {
       state.favorites = [];
       state.cart = [];
       state.orders = [];
+      saveCart();
+      saveFavorites();
+      saveOrders();
       updateNavFavBadge();
       updateNavCartBadge();
       refreshCartDisplay();
       renderAccount();
-      showToast('🧹 Données effacées');
+      showToast('🧹 Donnees effacees');
       break;
     }
     case 'go-admin': {
@@ -408,7 +433,8 @@ function handleAccountAction(action) {
 
 document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', function(e) {
   e.preventDefault();
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  d
+ocument.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   this.classList.add('active');
   const nav = this.dataset.nav;
 
@@ -454,14 +480,14 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('clic
   }
 }));
 
-// ✅ Indicateur hors ligne : bannière persistante quand le réseau coupe
-function initOfflineIndicator() {
+function initOfflineI
+ndicator() {
   let banner = document.getElementById('offlineBanner');
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'offlineBanner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;color:#fff;text-align:center;padding:0.4rem;font-size:0.78rem;font-weight:600;transform:translateY(-100%);transition:transform 0.3s ease;';
-    banner.textContent = '📡 Hors ligne — catalogue mémorisé';
+    banner.textContent = '📡 Hors ligne — catalogue memorise';
     document.body.prepend(banner);
   }
   const update = () => {
@@ -472,18 +498,68 @@ function initOfflineIndicator() {
   addEventListener('offline', update);
 }
 
+// ============================================================
+//  PRE-CACHE IMAGES POPULAIRES (Action 7)
+// ============================================================
+
+/**
+ * Envoie les URLs des images des produits populaires au Service Worker
+ * pour les pre-cacher. Limite aux 30 produits les plus populaires.
+ */
+async function precachePopularImages() {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+  if (!state.products || state.products.length === 0) return;
+
+  const popular = [...state.products]
+    .sort((a, b) => (b.popularity_score || 0) - (a.popularity_score || 0))
+    .slice(0, 30);
+
+  const imageUrls = [];
+  for (const p of popular) {
+    for (const img of [p.image, p.image2, p.image3, p.image4, p.image5, p.image6]) {
+      if (img && img.trim()) {
+        imageUrls.push(thumb(img.trim(), 300, 400));
+      }
+    }
+  }
+
+  if (imageUrls.length === 0) return;
+
+  try {
+    const channel = new MessageChannel();
+    navigator.serviceWorker.controller.postMessage(
+      { type: 'precache-images', urls: imageUrls },
+      [channel.port2]
+    );
+
+    channel.port1.onmessage = (event) => {
+      const { cached, failed, total } = event.data;
+      console.log(`[Main] Precache: ${cached}/${total} images mises en cache`);
+    };
+ 
+ } catch (e) {
+    console.warn('[Main] Precache images echoue:', e);
+  }
+}
+
+// ============================================================
+
 async function init() {
+  await loadPersistedState();
   await fetchProducts();
   loadOrders();
 
-  // Les catégories en pastilles cliquables
+  // Pre-cacher les images populaires apres le chargement des produits
+  precachePopularImages();
+
   const cats = [...new Set(state.products.map(p => removeEmojis(p.category)))];
   let html = `<button class="filter-btn active" data-category="all">Tout voir (${state.products.length})</button>`;
   cats.forEach(c => {
     const count = state.products.filter(p => p.category === c).length;
     html += `<button class="filter-btn" data-category="${escapeHtml(c)}">${escapeHtml(c)} (${count})</button>`;
   });
-  document.getElementById('filterBar').innerHTML = html;
+  const filterBar = document.getElementById('filterBar');
+  if (filterBar) filterBar.innerHTML = html;
 
   initPlaceholderRotation();
   initVoiceSearch();
@@ -491,11 +567,12 @@ async function init() {
   initLogoLongPress();
   initThemeToggle();
   initOfflineIndicator();
+  initServiceWorkerUpdates();
   refreshCatalogue();
   refreshCartDisplay();
   updateNavFavBadge();
+  setupAutoSync();
 
-  // Session admin : bouton "modifier" sur les cartes + badge Admin dans le compte
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     state.isAdminLoggedIn = true;
