@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" href="/icon.svg">
-    <title>Admin • Premium Market</title>
-    <link rel="preconnect" href="https://ueapohbmronolhvrlrkk.supabase.co">
-    <link rel="dns-prefetch" href="//ueapohbmronolhvrlrkk.supabase.co">
+    <title>Admin • NRJ Marketplace</title>
+    <link rel="preconnect" href="https://peojyqliwrtghomyukwn.supabase.co">
+    <link rel="dns-prefetch" href="//peojyqliwrtghomyukwn.supabase.co">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -31,12 +31,52 @@
 
         <!-- Panneau produits, affiché une fois connecté -->
         <div class="admin-panel" id="adminPanel">
-            <!-- Tableau de bord admin (rempli par renderAdminStats) -->
+            <!-- Tableau de bord (rempli par renderAdminStats) -->
             <section id="adminStats"></section>
+
+            <!-- 💬 Boîte de réception du chat NRJ Marketplace -->
+            <section id="adminChatSection" style="display:none;">
+                <h2 style="margin-bottom:0.8rem;color:var(--primary);">💬 Messages clients</h2>
+                <div class="ac-controls">
+                    <button type="button" id="acAiToggle" class="ac-toggle on" aria-pressed="true">🤖 IA activée</button>
+                    <button type="button" id="acAwayToggle" class="ac-toggle" aria-pressed="false">☀️ Disponible</button>
+                </div>
+                <div class="admin-chat-wrap">
+                    <div class="ac-list" id="acList"></div>
+                    <div class="ac-conv" id="acConv" style="display:none;">
+                        <div class="ac-conv-header">
+                            <button class="ac-back-btn" id="acBackBtn" aria-label="Retour à la liste">←</button>
+                            <div class="chat-avatar" id="acConvAvatar">👤</div>
+                            <div class="ac-conv-title">
+                                <div class="chat-header-name" id="acConvName">Client</div>
+                                <div class="chat-header-status" id="acConvStatus"></div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="acConvMessages"></div>
+                        <div class="chat-input-bar">
+                            <input type="text" id="acMsgInput" placeholder="Répondre au client…" maxlength="1000" autocomplete="off">
+                            <button class="chat-send-btn" id="acSendBtn" aria-label="Envoyer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <h2 style="margin-bottom:1rem;color:var(--primary);">Ajouter un nouveau produit</h2>
             <div class="form-group"><label>Nom</label><input type="text" id="adminName" placeholder="Ex: Écouteurs Pro"></div>
-            <div class="form-group"><label>Catégorie</label><input type="text" id="adminCategory" placeholder="Électronique, Mode..."></div>
+
+            <div class="form-group">
+                <label>Catégorie</label>
+                <select id="adminCategory">
+                    <option value="">— Choisir une catégorie —</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sous-catégorie</label>
+                <select id="adminSubcategory" disabled>
+                    <option value="">— Choisir d'abord une catégorie —</option>
+                </select>
+            </div>
+
             <div class="form-group"><label>Prix (FCFA)</label><input type="number" id="adminPrice" placeholder="8500"></div>
             <div class="form-group"><label>Image 1 (URL)</label><input type="url" id="adminImage" placeholder="Lien de l'image 1"></div>
             <div class="form-group"><label>Image 2 (URL)</label><input type="url" id="adminImage2" placeholder="Lien de l'image 2"></div>
@@ -48,7 +88,7 @@
             <div class="form-group"><label>Couleurs (séparées par des virgules)</label><input type="text" id="adminCouleurs" placeholder="Noir, Blanc, Kaki"></div>
             <div class="form-group"><label>Quantité minimale (MOQ)</label><input type="number" id="adminMoq" placeholder="1" min="1" value="1"></div>
             <div class="form-group"><label>Description</label><input type="text" id="adminDesc" placeholder="Description courte"></div>
-            <button class="btn btn-primary" id="addProductBtn" style="width:100%;background:var(--primary);color:white;border:none;padding:0.8rem;border-radius:50px;font-weight:700;cursor:pointer;">Ajouter le produit</button>
+            <button class="btn btn-primary" id="addProductBtn" style="width:100%;background:var(--primary);color:white;border:none;padding:0.8rem;border-radius:50px;font-weight:700;cursor:pointer;">Ajouter au catalogue</button>
             <h3 style="margin-top:2rem; font-size:1rem;">Produits en ligne</h3>
             <ul class="admin-products-list" id="adminProductsList"></ul>
         </div>

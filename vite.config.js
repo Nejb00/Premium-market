@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { writeFileSync } from 'fs';
 
 // Plugin minimal : après le build, génère precache-manifest.json (liste des
 // assets hashés à pré-cacher) pour que le Service Worker puisse les mettre en
