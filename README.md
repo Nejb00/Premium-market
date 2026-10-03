@@ -1,27 +1,29 @@
 # Premium Market
 
-Version premium / allégée de la marketplace NRJ.
+**🇬🇧 English** | [🇫🇷 Français](README.fr.md)
 
-Catalogue public + panneau admin, panier, favoris, recherche et commande WhatsApp.
+Premium / streamlined edition of the NRJ marketplace.
 
-**Live :** https://premium-market-steel.vercel.app
+Public catalogue + admin panel, cart, favorites, search and WhatsApp ordering.
+
+**Live:** https://premium-market-steel.vercel.app
 
 ---
 
 ## Stack
 
-- **Frontend** : Vite 5, HTML/CSS/JS vanilla (modules ES)
-- **Backend** : Supabase
-- **Déploiement** : Vercel
-- **PWA** : Service Worker + Web Manifest
+- **Frontend:** Vite 5, vanilla HTML/CSS/JS (ES modules)
+- **Backend:** Supabase
+- **Deployment:** Vercel
+- **PWA:** Service Worker + Web Manifest
 
 ---
 
-## Structure du projet
+## Project structure
 
 ```
-├── index.html              → Catalogue public
-├── admin.html              → Panneau admin (login + gestion produits)
+├── index.html              → Public catalogue
+├── admin.html              → Admin panel (login + product management)
 ├── vite.config.js
 ├── package.json
 │
@@ -33,7 +35,7 @@ Catalogue public + panneau admin, panier, favoris, recherche et commande WhatsAp
 ├── src/
 │   ├── css/
 │   │   ├── base.css
-│   │   ├── main.css            → importe tous les styles du catalogue
+│   │   ├── main.css            → imports all catalogue styles
 │   │   ├── admin.css
 │   │   ├── search-bar.css
 │   │   ├── filters.css
@@ -45,24 +47,24 @@ Catalogue public + panneau admin, panier, favoris, recherche et commande WhatsAp
 │   │   └── skeleton.css
 │   │
 │   └── js/
-│       ├── config.js           → constantes + client Supabase
-│       ├── state.js            → état global (produits, panier, favoris…)
-│       ├── utils.js            → helpers (format, recherche floue, escape…)
-│       ├── api.js              → appels Supabase
-│       ├── db.js               → couche données locale
-│       ├── cart.js             → panier, favoris, badges, commande WhatsApp
-│       ├── catalogue.js        → grille produits, pagination, catégories
-│       ├── search.js           → dropdown recherche + recherche vocale
-│       ├── search-view.js      → page de recherche dédiée
-│       ├── product-modal.js    → modale détail produit
-│       ├── product-edit.js     → édition rapide (crayon)
-│       ├── visual-search.js    → recherche par image
-│       ├── reco.js             → recommandations
+│       ├── config.js           → constants + Supabase client
+│       ├── state.js            → global state (products, cart, favorites…)
+│       ├── utils.js            → helpers (formatting, fuzzy search, escaping…)
+│       ├── api.js              → Supabase calls
+│       ├── db.js               → local data layer
+│       ├── cart.js             → cart, favorites, badges, WhatsApp order
+│       ├── catalogue.js        → product grid, pagination, categories
+│       ├── search.js           → search dropdown + voice search
+│       ├── search-view.js      → dedicated search page
+│       ├── product-modal.js    → product detail modal
+│       ├── product-edit.js     → quick edit (pencil)
+│       ├── visual-search.js    → image-based search
+│       ├── reco.js             → recommendations
 │       ├── lazy-loading.js
-│       ├── sync.js             → synchronisation auto
-│       ├── admin.js            → logique admin
-│       ├── main.js             → point d’entrée catalogue
-│       └── admin-main.js       → point d’entrée admin
+│       ├── sync.js             → auto synchronization
+│       ├── admin.js            → admin logic
+│       ├── main.js             → catalogue entry point
+│       └── admin-main.js       → admin entry point
 │
 └── scripts/
     ├── sync_to_gdrive.py
@@ -71,64 +73,64 @@ Catalogue public + panneau admin, panier, favoris, recherche et commande WhatsAp
 
 ---
 
-## Démarrage local
+## Local setup
 
 ```bash
 npm install
 npm run dev          # http://localhost:5173
 ```
 
-### Scripts disponibles
+### Available scripts
 
-| Commande          | Description                              |
+| Command           | Description                              |
 |-------------------|------------------------------------------|
-| `npm run dev`     | Serveur de développement (hot-reload)    |
-| `npm run build`   | Build de production → `dist/`            |
-| `npm run preview` | Prévisualiser le build localement        |
+| `npm run dev`     | Development server (hot-reload)          |
+| `npm run build`   | Production build → `dist/`               |
+| `npm run preview` | Preview the build locally                |
 
 ---
 
-## Build & Déploiement
+## Build & Deployment
 
 ```bash
 npm run build
 ```
 
-Le projet est configuré pour **Vercel** (`base: '/'`).
+The project is configured for **Vercel** (`base: '/'`).
 
-- Push sur `main` → déploiement automatique
-- Les fichiers `index.html` et `admin.html` sont tous les deux inclus dans le build
-
----
-
-## Fonctionnalités principales
-
-- Catalogue avec filtres, catégories et pagination infinie
-- Recherche texte + vocale + **recherche visuelle**
-- Panier + favoris persistants (localStorage)
-- Commande envoyée directement sur WhatsApp
-- Compte client (historique commandes, favoris…)
-- Mode admin (ajout / modification / suppression produits)
-- Thème clair / sombre
-- PWA installable + mode hors-ligne (Service Worker)
-- Scripts de synchronisation Google Drive et Notion
+- Push to `main` → automatic deployment
+- Both `index.html` and `admin.html` are included in the build
 
 ---
 
-## Différences avec nrj-marketplace
+## Key features
 
-Cette version est plus légère :
-- Pas de chat intégré
-- Pas d’Edge Function IA
-- Moins de thèmes CSS
-- Pas de route API Open Graph
-- Dépendances plus minimales
+- Catalogue with filters, categories and infinite pagination
+- Text search + voice search + **visual search**
+- Persistent cart + favorites (localStorage)
+- Order sent directly to WhatsApp
+- Customer account (order history, favorites…)
+- Admin mode (add / edit / delete products)
+- Light / dark theme
+- Installable PWA + offline mode (Service Worker)
+- Google Drive and Notion synchronization scripts
 
 ---
 
-## Notes techniques
+## Differences from nrj-marketplace
 
-- Client Supabase importé via npm (`@supabase/supabase-js`)
-- Code-splitting des vendors (chunk `supabase`)
-- Precache automatique des assets hashés via plugin Vite + Service Worker
-- Long-press sur le logo → accès admin
+This version is lighter:
+- No built-in chat
+- No AI Edge Function
+- Fewer CSS themes
+- No Open Graph API route
+- Smaller dependencies
+
+---
+
+## Technical notes
+
+- Supabase client imported via npm (`@supabase/supabase-js`)
+- Vendor code-splitting (`supabase` chunk)
+- Automatic precache of hashed assets via Vite plugin + Service Worker
+- Long-press on the logo → admin access
