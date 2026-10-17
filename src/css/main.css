@@ -1,23 +1,24 @@
-@import './base/base.css';
+/* Premium Market - Main CSS File
+   Importe tous les composants CSS nécessaires pour le catalogue
+   Basé sur la structure de nrj-marketplace
+*/
+
 @import './components/glass.css';
 @import './components/search-bar.css';
 @import './components/filters.css';
 @import './components/product-card.css';
 @import './components/product-modal.css';
-@import './layout/navigation.css';
-@import './components/cart-admin.css';
 @import './components/search-view.css';
 @import './components/placeholder.css';
+@import './components/skeleton.css';
+@import './components/cart-admin.css';
 @import './components/chat.css';
 @import url('themes/light-theme-patch.css');
+@import url('themes/fluo-theme.css');
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   🌍 ACCESSIBILITÉ : Réduction des animations pour les utilisateurs sensibles
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
